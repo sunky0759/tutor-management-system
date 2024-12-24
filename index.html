@@ -430,7 +430,7 @@
             margin-bottom: 0;
         }
 
-        /* ������������ */
+        /* �������������� */
         .dropdown {
             position: relative;
         }
@@ -1189,12 +1189,12 @@
     </div>
 
     <!-- 新增模态框 -->
-    <div class="modal fade" id="addModal" tabindex="-1" inert>
+    <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">新增家教</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="addModalLabel">新增家教</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
@@ -1209,7 +1209,8 @@
                         </div>
                     </div>
                     <div class="text-end">
-                        <button class="btn btn-primary" id="parseBtn">录入家教</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-primary" id="parseBtn">录入家教</button>
                     </div>
                 </div>
             </div>
@@ -1226,7 +1227,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="editRawContent" class="form-label">原始��容</label>
+                        <label for="editRawContent" class="form-label">原始容</label>
                         <textarea class="form-control" id="editRawContent" rows="5"></textarea>
                     </div>
                     <div class="row">

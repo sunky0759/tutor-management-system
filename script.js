@@ -139,7 +139,7 @@ function extractSalaryInfo(text) {
                 salaryUnit: standardizeUnit(match[3])
             })
         },
-        // 匹配其他单值格式
+        // 匹配其他单值格
         {
             pattern: /(\d+)\s*元?\s*[\/每]?\s*(小时|h|hr|hour|课时|节课|课|次|月)/i,
             handler: (match) => ({
@@ -158,6 +158,35 @@ function extractSalaryInfo(text) {
     }
     
     return { salary: '', salaryUnit: '' };
+}
+
+// 标准化单位
+function standardizeUnit(unit) {
+    // 转换为小写并去除空格
+    unit = unit.toLowerCase().trim();
+    
+    // 标准化小时相关单位
+    if (/^(h|hr|hour|小时)$/.test(unit)) {
+        return '小时';
+    }
+    
+    // 标准化课时相关单位
+    if (/^(课时|节课|课)$/.test(unit)) {
+        return '课时';
+    }
+    
+    // 标准化次数相关单位
+    if (unit === '次') {
+        return '次';
+    }
+    
+    // 标准化月相关单位
+    if (unit === '月') {
+        return '月';
+    }
+    
+    // 如果没有匹配到任何标准单位，返回原始单位
+    return unit;
 }
 
 // 初始化位置选择器
@@ -340,12 +369,13 @@ function applyFilters() {
 
 // 更新筛选选项
 function updateFilterOptions() {
-    // 获取所有城市、区域、年级和科目
+    // 收集所有唯一的筛选选项
     const cities = new Set();
     const districts = new Set();
     const grades = new Set();
     const subjects = new Set();
-
+    
+    // 遍历所有结果，收集筛选选项
     allResults.forEach(result => {
         if (result.city) cities.add(result.city);
         if (result.district) districts.add(result.district);
@@ -384,8 +414,8 @@ function updateFilterOptions() {
     Array.from(districts).sort().forEach(district => {
         filterDistrict.innerHTML += `<option value="${district}">${district}</option>`;
     });
-
-    // 更新年级和科目筛选
+    
+    // 更新年级和科目的筛选选项
     updateGradeAndSubjectFilters(grades, subjects);
 }
 
@@ -411,10 +441,12 @@ import cityData from './cityData.js';
 
 // 提取城市区域信息
 function extractCityAndDistrict(text) {
-    console.log('开始提取城市区域信息:', text); // 调试日志
+    console.log('==================== 开始提取城市区域信息 ====================');
+    console.log('输入文本:', text);
     
     // 检查是否为线上课程
     if (/线上|网课|远程|在线|视频|网络/.test(text)) {
+        console.log('匹配到线上课程');
         return {
             city: '全国',
             district: '线上'
@@ -424,16 +456,41 @@ function extractCityAndDistrict(text) {
     let foundCity = null;
     let foundDistrict = null;
 
-    // 先尝试匹配区域，因为区域信息通常更具体
+    // 特殊处理顺德区
+    console.log('检查是否包含顺德关键词...');
+    const hasShunde = text.includes('顺德') || text.includes('順德');
+    console.log('是否包含顺德:', hasShunde);
+    
+    if (hasShunde) {
+        console.log('找到顺德关键词，直接返回佛山市顺德区');
+        foundCity = '佛山';
+        foundDistrict = '顺德区';
+        return {
+            city: foundCity,
+            district: foundDistrict
+        };
+    }
+
+    // 先尝试匹配区域
+    console.log('开始匹配区域...');
     for (const [city, districts] of Object.entries(cityData)) {
+        console.log(`检查城市 ${city} 的所有区域...`);
         for (const district of districts) {
-            // 检查完整的区域名称或简称
             const districtWithoutSuffix = district.replace(/[区市县镇]$/, '');
-            console.log('检查区域:', district, districtWithoutSuffix); // 调试日志
-            if (text.includes(district) || text.includes(districtWithoutSuffix)) {
+            console.log(`- 检查区域: ${district} (不带后缀: ${districtWithoutSuffix})`);
+            
+            // 使用更灵活的匹配方式
+            const districtPattern = new RegExp(districtWithoutSuffix + '[区市县镇]?', 'i');
+            const matchResult = text.match(districtPattern);
+            const includesResult = text.includes(district);
+            
+            console.log(`  - 正则匹配结果: ${matchResult ? '是' : '否'}`);
+            console.log(`  - 直接包含结果: ${includesResult ? '是' : '否'}`);
+            
+            if (matchResult || includesResult) {
                 foundCity = city;
                 foundDistrict = district;
-                console.log('找到区域匹配:', city, district); // 调试日志
+                console.log(`找到区域匹配! 城市: ${city}, 区域: ${district}`);
                 break;
             }
         }
@@ -442,17 +499,38 @@ function extractCityAndDistrict(text) {
 
     // 如果没找到区域，尝试匹配城市
     if (!foundCity) {
+        console.log('未找到区域匹配，开始匹配城市...');
         for (const city of Object.keys(cityData)) {
             const cityWithoutSuffix = city.replace(/[市]$/, '');
-            console.log('检查城市:', city, cityWithoutSuffix); // 调试日志
-            if (text.includes(city) || text.includes(cityWithoutSuffix)) {
+            console.log(`检查城市: ${city} (不带后缀: ${cityWithoutSuffix})`);
+            
+            const cityPattern = new RegExp(cityWithoutSuffix + '市?', 'i');
+            const matchResult = text.match(cityPattern);
+            const includesResult = text.includes(city);
+            
+            console.log(`- 正则匹配结果: ${matchResult ? '是' : '否'}`);
+            console.log(`- 直接包含结果: ${includesResult ? '是' : '否'}`);
+            
+            if (matchResult || includesResult) {
                 foundCity = city;
+                console.log(`找到城市匹配: ${city}`);
+                
                 // 找到城市后，再次尝试匹配该城市的区域
+                console.log(`尝试匹配 ${city} 的区域...`);
                 for (const district of cityData[city]) {
                     const districtWithoutSuffix = district.replace(/[区市县镇]$/, '');
-                    if (text.includes(district) || text.includes(districtWithoutSuffix)) {
+                    console.log(`- 检查区域: ${district} (不带后缀: ${districtWithoutSuffix})`);
+                    
+                    const districtPattern = new RegExp(districtWithoutSuffix + '[区市县镇]?', 'i');
+                    const matchResult = text.match(districtPattern);
+                    const includesResult = text.includes(district);
+                    
+                    console.log(`  - 正则匹配结果: ${matchResult ? '是' : '否'}`);
+                    console.log(`  - 直接包含结果: ${includesResult ? '是' : '否'}`);
+                    
+                    if (matchResult || includesResult) {
                         foundDistrict = district;
-                        console.log('找到城市和区域匹配:', city, district); // 调试日志
+                        console.log(`找到区域匹配: ${district}`);
                         break;
                     }
                 }
@@ -461,21 +539,10 @@ function extractCityAndDistrict(text) {
         }
     }
 
-    // 如果找到了城市但没找到区域，再次尝试更宽松的匹配
-    if (foundCity && !foundDistrict) {
-        const districts = cityData[foundCity];
-        for (const district of districts) {
-            const districtWithoutSuffix = district.replace(/[区市县镇]$/, '');
-            // 更宽松的匹配，允许部分匹配和忽略大小写
-            if (text.toLowerCase().includes(districtWithoutSuffix.toLowerCase())) {
-                foundDistrict = district;
-                console.log('找到宽松匹配:', district); // 调试日志
-                break;
-            }
-        }
-    }
-
-    console.log('提取结果:', { city: foundCity, district: foundDistrict }); // 调试日志
+    console.log('==================== 提取结果 ====================');
+    console.log('城市:', foundCity || '未找到');
+    console.log('区域:', foundDistrict || '未找到');
+    
     return {
         city: foundCity || '',
         district: foundDistrict || ''
@@ -617,24 +684,27 @@ function saveEdit() {
     alert('编辑成功！');
 }
 
-// 在页面加载时初始化
+// 等待文档加载完成
 $(document).ready(function() {
-    // 初始化空数组
-    allResults = [];
-
-    // 初始化编辑模态框
-    initializeEditModal();
+    // 初始化模态框
+    const addModal = new bootstrap.Modal(document.getElementById('addModal'));
+    const editModal = new bootstrap.Modal(document.getElementById('editModal'));
     
-    // 初始化筛选器
-    initializeFilters();
+    // 绑定新增按钮事件
+    $('#addButton').on('click', function() {
+        addModal.show();
+    });
     
-    // 初始化批量操作按钮事件
-    $('#batchCopy').off('click').on('click', batchCopy);
-    $('#batchDelete').off('click').on('click', batchDelete);
-    $('#batchExport').off('click').on('click', exportText);
+    // 绑定关闭按钮事件
+    $('.btn-close').on('click', function() {
+        const modal = bootstrap.Modal.getInstance($(this).closest('.modal')[0]);
+        if (modal) {
+            modal.hide();
+        }
+    });
     
-    // 初始化识别文本按钮事件
-    $('#parseBtn').off('click').on('click', function() {
+    // 绑定录入家教按钮事件
+    $('#parseBtn').on('click', function() {
         const textInput = $('#textInput').val().trim();
         if (!textInput) {
             alert('请输入要识别的文本');
@@ -671,46 +741,34 @@ $(document).ready(function() {
             // 保存数据
             saveDataToStorage();
             
-            // 更新显示
+            // ��新显示
             displayResults(allResults);
             updateFilterOptions();
             updateTotalCount();
             
             // 显示成功消息
-            alert(`成功识别 ${uniqueResults.length} 条家教信息${duplicates.length > 0 ? '，已过重复内容' : ''}`);
+            alert(`成功识别 ${uniqueResults.length} 条家教信息${duplicates.length > 0 ? '，已过滤重复内容' : ''}`);
             
             // 清空输入框
             $('#textInput').val('');
             
             // 关闭模态框
-            const addModal = bootstrap.Modal.getInstance(document.getElementById('addModal'));
-            if (addModal) {
-                addModal.hide();
-            }
+            addModal.hide();
         } else if (duplicates.length > 0) {
             alert('所有家教信息都已存在，请添加新记录');
         }
     });
     
+    // 初始化输入框事件
+    $('#textInput').on('input', function() {
+        updateInputStyle(this);
+    });
+    
     // 从存储加载数据
     loadData();
     
-    // 初始化全选功能
-    $('#selectAll').off('change').on('change', function() {
-        const isChecked = $(this).prop('checked');
-        $('.card-select').prop('checked', isChecked);
-        updateSelectedCount();
-        updateBatchActionsVisibility();
-    });
-    
-    // 监听单个选择框的变化
-    $(document).on('change', '.card-select', function() {
-        updateSelectedCount();
-        updateBatchActionsVisibility();
-    });
-    
-    // 初始化文件拖放和粘贴功能
-    initializeFileHandling();
+    // 初始化其他事件监听器
+    initializeEventListeners();
 });
 
 // 初始化文件处理
@@ -932,7 +990,7 @@ function createResultCard(result) {
     const bottomRow = $('<div>')
         .addClass('d-flex justify-content-between align-items-center mt-2');
     
-    // 添加创建时间
+    // 添加创建时
     if (result.createTime) {
         const createTime = $('<small>')
             .addClass('text-muted')
@@ -1009,7 +1067,7 @@ function openEditModal(result) {
         });
     }
     
-    // 使用 Bootstrap 的方法打开模态框
+    // 使用 Bootstrap 的方法开模态框
     const modal = new bootstrap.Modal(editModal);
     modal.show();
 }
@@ -1266,7 +1324,7 @@ function batchCopy() {
         const BATCH_SIZE = 8;
         const totalBatches = Math.ceil(selectedTexts.length / BATCH_SIZE);
         
-        if (confirm(`已选择 ${selectedTexts.length} 条记录，超过8条能不便于阅读。\n点击"确定"进行分批复制（共 ${totalBatches} 批，每批8条），点击"取消"进行全复制。`)) {
+        if (confirm(`已选择 ${selectedTexts.length} 条记录，超过8条可能不便于阅读。\n点击"确定"进行分批复制（共 ${totalBatches} 批��每批8条），点击"取消"进行全复制。`)) {
             // 分批复制
             for (let i = 0; i < selectedTexts.length; i += BATCH_SIZE) {
                 const currentBatch = Math.floor(i / BATCH_SIZE) + 1;
@@ -1307,12 +1365,12 @@ function updateInputStyle(input) {
 // 提取年级信息
 function extractGrade(text) {
     // 优先匹配完整的年级描述
-    const fullGradeMatch = text.match(/小学[一二三四五六]年级|小[一二三四五]年级/);
+    const fullGradeMatch = text.match(/小学[一二三四五六]年级|小[一二三四五六]年级/);
     if (fullGradeMatch) {
         return '小学';
     }
 
-    // 如果包含"小"字且后��跟数字，则判定为小学
+    // 如果包含"小"字且后跟数字，则判定为小学
     const smallNumberMatch = text.match(/小[一二三四五六]/);
     if (smallNumberMatch) {
         return '小学';
@@ -1354,7 +1412,7 @@ function toggleTop(id) {
         result.isTop = !result.isTop;
         saveDataToStorage();
         
-        // 更新过滤后的结果
+        // 更新过滤后的果
         filteredResults = filteredResults.map(r => 
             r.id === id ? {...r, isTop: result.isTop} : r
         );
@@ -1364,28 +1422,33 @@ function toggleTop(id) {
     }
 }
 
-/**
- * 更新筛选选项
- * 根当前数据集中的实际数据动态更新筛选器的可选项
- * 包括：城市、区域、年级、科目等的更新
- */
-function updateFilterOptions() {
-    // 收集所有唯一的筛选选项
-    const cities = new Set();
-    const districts = new Set();
-    const grades = new Set();
-    const subjects = new Set();
+// 初始化所有事件监听器
+function initializeEventListeners() {
+    // 初始化编辑模态框
+    initializeEditModal();
     
-    // 遍历所有结果，收集筛选选项
-    allResults.forEach(result => {
-        if (result.city) cities.add(result.city);
-        if (result.district) districts.add(result.district);
-        if (result.grade) grades.add(result.grade);
-        if (result.subjects && Array.isArray(result.subjects)) {
-            result.subjects.forEach(subject => subjects.add(subject));
-        }
+    // 初始化筛选器
+    initializeFilters();
+    
+    // 初始化批量操作按钮事件
+    $('#batchCopy').on('click', batchCopy);
+    $('#batchDelete').on('click', batchDelete);
+    $('#batchExport').on('click', exportText);
+    
+    // 初始化全选功能
+    $('#selectAll').on('change', function() {
+        const isChecked = $(this).prop('checked');
+        $('.card-select').prop('checked', isChecked);
+        updateSelectedCount();
+        updateBatchActionsVisibility();
     });
     
-    // 更新年级和科目的筛选选项
-    updateGradeAndSubjectFilters(grades, subjects);
+    // 监听单个选择框的变化
+    $(document).on('change', '.card-select', function() {
+        updateSelectedCount();
+        updateBatchActionsVisibility();
+    });
+    
+    // 初始化文件拖放和粘贴功能
+    initializeFileHandling();
 }
