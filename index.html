@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家教信息管理系统</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .navbar {
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .add-button {
+            position: fixed;
+            right: 20px;
+            top: 15px;
+            z-index: 1030;
+        }
+
+        .filter-bar {
+            background: white;
+            padding: 15px;
+            margin-bottom: 0.5rem !important;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .filter-bar .form-control {
+            max-width: 200px;
+            margin-right: 10px;
+        }
+
+        .card {
+            margin-bottom: 0.5rem !important;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .card-select {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+
+        .batch-actions {
+            display: none;
+            margin-bottom: 0.5rem !important;
+        }
+
+        /* 保留原有的模态框样式 */
+        .modal-dialog {
+            max-width: 800px;
+        }
+
+        .input-label {
+            position: absolute;
+            top: -8px;
+            left: 10px;
+            background: white;
+            padding: 0 5px;
+            color: #666;
+            font-size: 12px;
+        }
+
+        /* 保留原有的其他样式 */
+        /* 保持原有的样式内容 */
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9fa;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .upload-area:hover {
+            border-color: #0d6efd;
+            background: #e9ecef;
+        }
+        .card {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .form-control {
+            margin-bottom: 15px;
+        }
+        .results-area {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .result-card {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+        .result-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            color: white;
+        }
+        .tag-city { background-color: #007bff; }
+        .tag-district { background-color: #28a745; }
+        .tag-grade { background-color: #dc3545; }
+        .tag-subject { background-color: #ffc107; color: black; }
+        .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+            border-color: #0a58ca;
+        }
+
+        /* 下拉选择框样式 */
+        .form-select {
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #212529;
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        .form-select:focus {
+            border-color: #86b7fe;
+            outline: 0;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+
+        /* 多选框样式 */
+        .form-select[multiple] {
+            padding-right: 0.75rem;
+            background-image: none;
+            height: auto;
+            min-height: 120px;
+        }
+
+        .form-select[multiple] option {
+            padding: 0.5rem;
+            margin-bottom: 1px;
+            border-radius: 0.25rem;
+        }
+
+        .form-select[multiple] option:checked {
+            background-color: #0d6efd;
+            color: white;
+        }
+
+        /* 标签样式 */
+        .tag {
+            display: inline-block;
+            padding: 0.25em 0.4em;
+            font-size: 85%;
+            font-weight: 700;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: 0.25rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .tag-city { background-color: #007bff; color: white; }
+        .tag-district { background-color: #28a745; color: white; }
+        .tag-grade { background-color: #dc3545; color: white; }
+        .tag-subject { background-color: #ffc107; color: black; }
+
+        /* 结果卡片样式 */
+        .result-card {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            background-color: white;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .result-card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .raw-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* 科目选择器样式 */
+        .subjects-section {
+            margin-bottom: 1rem;
+        }
+        
+        .subjects-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subjects-header label {
+            margin-bottom: 0;
+        }
+        
+        .clear-subjects {
+            border: none;
+            background: none;
+            color: #6c757d;
+            padding: 0;
+            font-size: 0.875rem;
+        }
+        
+        .subjects-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            min-height: 100px;
+        }
+        
+        .subject-group {
+            display: inline-block;
+            margin: 0 8px 8px 0;
+            padding: 4px 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .subject-item {
+            display: inline-block;
+            margin: 0 8px 8px 0;
+        }
+        
+        .subject-checkbox,
+        .subject-group-checkbox {
+            margin-right: 4px;
+        }
+        
+        .subject-item label,
+        .subject-group label {
+            margin: 0;
+            cursor: pointer;
+            user-select: none;
+            font-size: 14px;
+        }
+        
+        /* 自定义复选框样式 */
+        .subject-checkbox,
+        .subject-group-checkbox {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ddd;
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+            vertical-align: middle;
+            margin-top: -2px;
+        }
+        
+        .subject-checkbox:checked,
+        .subject-group-checkbox:checked {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        
+        .subject-checkbox:checked::after,
+        .subject-group-checkbox:checked::after {
+            content: '';
+            position: absolute;
+            left: 4px;
+            top: 1px;
+            width: 4px;
+            height: 8px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        
+        .subject-checkbox:hover,
+        .subject-group-checkbox:hover {
+            border-color: #0d6efd;
+        }
+
+        /* 编辑模态框中的科目选择器容器 */
+        .subjects-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .subjects-section .input-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #212529;
+        }
+
+        /* 添加一个清除所有科目的按钮 */
+        .subjects-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .clear-subjects {
+            font-size: 0.875rem;
+            color: #6c757d;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .clear-subjects:hover {
+            color: #dc3545;
+        }
+
+        /* 自定义输入框和下拉列表样式 */
+        .location-input {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .location-input input[type="text"] {
+            padding: 0.5rem 2.5rem 0.5rem 1rem;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            width: 100%;
+            font-size: 0.9rem;
+            transition: all 0.2s ease-in-out;
+            background-color: #fff;
+        }
+
+        .location-input input[type="text"]:focus {
+            border-color: #86b7fe;
+            outline: 0;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+
+        .location-input .clear-btn {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+            padding: 0.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .location-input .clear-btn:hover {
+            opacity: 1;
+        }
+
+        .location-input input[type="text"]::placeholder {
+            color: #adb5bd;
+        }
+
+        /* 美化datalist下拉选项 */
+        input[list]::-webkit-calendar-picker-indicator {
+            display: none;
+        }
+
+        .location-input .input-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #212529;
+        }
+
+        .location-input.has-value input[type="text"] {
+            padding-right: 2.5rem;
+        }
+
+        /* 编辑模态框中的位置选择器样式 */
+        .location-selectors {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .location-selectors .location-input {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        /* ������������ */
+        .dropdown {
+            position: relative;
+        }
+        
+        .custom-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .dropdown-content {
+            padding: 0;
+        }
+        
+        .dropdown-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        /* 输入框样式 */
+        .dropdown input[type="text"] {
+            width: 100%;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+        }
+        
+        .dropdown input[type="text"]:focus {
+            border-color: #86b7fe;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+            outline: none;
+        }
+
+        /* ��义下拉列表样式 */
+        datalist {
+            position: absolute;
+            max-height: 200px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        /* 为Chrome和Edge浏览器自定义下拉列表样式 */
+        input::-webkit-calendar-picker-indicator {
+            display: none !important;
+        }
+
+        /* 为Firefox浏览器���义下拉表样��� */
+        @-moz-document url-prefix() {
+            datalist {
+                display: block;
+            }
+            option {
+                padding: 5px 10px;
+                cursor: pointer;
+            }
+            option:hover {
+                background-color: #f0f0f0;
+            }
+        }
+
+        /* 下拉列表选项样式 */
+        datalist option {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            border-bottom: 1px solid #eee;
+        }
+
+        datalist option:hover {
+            background-color: #f5f5f5;
+        }
+
+        /* 下拉列表滚动条样式 */
+        datalist::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        datalist::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        datalist::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        datalist::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* 输入框样式化 */
+        .location-input {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .location-input input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .location-input input:focus {
+            outline: none;
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+        }
+
+        /* 下拉箭头样式 */
+        .location-input::after {
+            content: '▼';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            pointer-events: none;
+            font-size: 12px;
+        }
+
+        /* 自定义下拉列表样式 */
+        .custom-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+            margin-top: 4px;
+        }
+
+        .dropdown-content {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .dropdown-item {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f5f5f5;
+        }
+
+        .dropdown-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .dropdown-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .dropdown-content::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+
+        .dropdown-content::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* 输入框容器样式 */
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        /* 输入框样式 */
+        .input-wrapper input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .input-wrapper input:focus {
+            outline: none;
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 2px rgba(13,110,253,0.25);
+        }
+
+        /* 清除按钮样式 */
+        .clear-btn {
+            position: absolute;
+            right: 8px;
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 4px;
+            display: none;
+        }
+
+        .clear-btn:hover {
+            color: #333;
+        }
+
+        .input-wrapper input:not(:placeholder-shown) + .clear-btn {
+            display: block;
+        }
+
+        .fixed-add-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .filter-bar {
+            background-color: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        .batch-actions {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #fff;
+            padding: 10px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        
+        .card {
+            margin-bottom: 15px;
+        }
+        
+        .card-select {
+            margin-right: 10px;
+        }
+
+        /* 修复选择框样式 */
+        .position-relative {
+            position: relative;
+        }
+        
+        datalist {
+            position: absolute;
+            max-height: 200px;
+            overflow-y: auto;
+            width: 100%;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: none;
+        }
+        
+        input:focus + datalist {
+            display: block;
+        }
+        
+        datalist option {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        
+        datalist option:hover {
+            background-color: #f8f9fa;
+        }
+        
+        /* 编辑模态框样式 */
+        #editModal .modal-body {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        #editModal .form-check {
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        #editModal .border.rounded {
+            background-color: #f8f9fa;
+        }
+        
+        #editModal .row.g-2 {
+            margin: 0;
+            padding: 10px;
+        }
+        
+        /* 确保标签不会和输入框重叠 */
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        /* 下拉框容器样式 */
+        .dropdown-input-container {
+            position: relative;
+        }
+        
+        /* 下拉列表样式 */
+        .dropdown-list {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1050;
+        }
+        
+        .dropdown-list.show {
+            display: block;
+        }
+        
+        .dropdown-item {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        /* 编辑模态框中的下拉框样式 */
+        #editModal .dropdown-list {
+            z-index: 1060;
+        }
+
+        /* 编辑模态框中的下拉框样式 */
+        #editModal .custom-dropdown {
+            position: absolute;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            z-index: 1060;
+            margin-top: 2px;
+        }
+
+        #editModal .location-input {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        #editModal .input-wrapper {
+            position: relative;
+        }
+
+        #editModal .input-wrapper input {
+            width: 100%;
+            padding: 0.375rem 2rem 0.375rem 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+        }
+
+        #editModal .clear-btn {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+            padding: 0;
+            font-size: 1.25rem;
+        }
+
+        #editModal .dropdown-content {
+            padding: 0.5rem 0;
+        }
+
+        #editModal .dropdown-item {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+        }
+
+        #editModal .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* 标签容器样式 */
+        .tags-container {
+            margin: 4px 0 !important;
+        }
+        
+        /* 标签基础样式 */
+        .tag {
+            display: inline-block;
+            padding: 2px 6px !important;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 4px !important;
+            margin-bottom: 4px !important;
+        }
+        
+        /* 年级标签 */
+        .tag-grade {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        /* 目标�� */
+        .tag-subject {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        /* 确保标题行正确显示 */
+        .card-body {
+            position: relative;
+        }
+        
+        .card-title {
+            margin-bottom: 0;
+        }
+        
+        /* 薪酬信息样式 */
+        .salary-info {
+            position: relative;
+            display: inline-block;
+            margin-left: auto;
+            padding-left: 10px;
+        }
+        
+        /* 确保 flex 布局正确工作 */
+        .d-flex.justify-content-between {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            width: 100% !important;
+        }
+        
+        /* 防止其他元素覆盖 */
+        .form-check.float-end {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* 卡片基础样式 */
+        .card-body {
+            position: relative;
+            padding: 0.75rem !important;
+        }
+        
+        /* 标题行样式 */
+        .card-title {
+            margin-bottom: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* 薪酬信息样式 */
+        .salary-info {
+            display: inline-block;
+            color: #28a745 !important;
+            font-weight: bold !important;
+            margin-left: 10px;
+        }
+        
+        /* 确保 flex 布局在所有浏览器中正确工作 */
+        .d-flex {
+            display: -webkit-box !important;
+            display: -ms-flexbox !important;
+            display: flex !important;
+        }
+        
+        .align-items-center {
+            -webkit-box-align: center !important;
+            -ms-flex-align: center !important;
+            align-items: center !important;
+        }
+        
+        /* 复选框容器样式 */
+        .form-check.float-end {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            z-index: 2;
+        }
+
+        /* 日期筛选下拉框样式 */
+        .dropdown {
+            position: relative;
+        }
+        
+        .custom-date-range {
+            min-width: 250px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-top: 2px;
+        }
+        
+        .custom-date-range input[type="date"] {
+            font-size: 14px;
+        }
+        
+        .custom-date-range .form-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        
+        .custom-date-range .btn-sm {
+            font-size: 12px;
+            padding: 4px 12px;
+        }
+        
+        /* 禁用的选项样式 */
+        select option[disabled] {
+            color: #666;
+            font-style: italic;
+        }
+        
+        /* 下拉框箭头样式 */
+        .dropdown::after {
+            content: '';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 4px solid #666;
+            pointer-events: none;
+        }
+
+        /* 调整卡片内部间距 */
+        .card {
+            margin-bottom: 0.5rem !important;
+        }
+
+        .card-body {
+            padding: 0.75rem !important;
+        }
+
+        /* 调整标签容器间距 */
+        .tags-container {
+            margin: 4px 0 !important;
+        }
+
+        /* 调整标签间距 */
+        .tag {
+            margin-right: 4px !important;
+            margin-bottom: 4px !important;
+            padding: 2px 6px !important;
+        }
+
+        /* 调整底部操作栏间距 */
+        .batch-actions {
+            padding: 0.5rem 0 !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        /* 调整搜索结果总数显示的间距 */
+        .d-flex.justify-content-end.mb-3 {
+            margin-bottom: 0.5rem !important;
+        }
+
+        #textInput {
+            transition: all 0.3s ease;
+        }
+        
+        #textInput.dragover {
+            border-color: #0d6efd;
+            background-color: rgba(13, 110, 253, 0.05);
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+
+        .input-area {
+            position: relative;
+        }
+
+        #textInput {
+            transition: all 0.3s ease;
+            min-height: 150px;
+        }
+
+        #textInput.dragover {
+            border-color: #0d6efd;
+            background-color: rgba(13, 110, 253, 0.05);
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+
+        .drag-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(13, 110, 253, 0.1);
+            border: 2px dashed #0d6efd;
+            border-radius: 0.375rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #0d6efd;
+            font-size: 1.2em;
+            pointer-events: none;
+        }
+
+        .drag-overlay i {
+            font-size: 2em;
+            margin-bottom: 0.5rem;
+        }
+
+        /* 置顶卡片样式 */
+        .topped {
+            border-left: 3px solid #ffc107 !important;
+            background-color: #fff8e1 !important;
+        }
+
+        /* 置顶标签样式 */
+        .tag-top {
+            background-color: #ffc107;
+            color: #000;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .tag-top i {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">家教信息管理系统</a>
+            <button class="btn btn-primary add-button" data-bs-toggle="modal" data-bs-target="#addModal">
+                <i class="bi bi-plus-lg"></i> 新增家教
+            </button>
+        </div>
+    </nav>
+
+    <!-- 主容器 -->
+    <div class="container" style="margin-top: 45px;">
+        <!-- 筛选栏 -->
+        <div class="filter-bar mb-3">
+            <div class="row g-2">
+                <!-- 搜索框 -->
+                <div class="col-md">
+                    <input type="text" id="searchInput" class="form-control" placeholder="搜索...">
+                </div>
+                <!-- 城市筛选 -->
+                <div class="col-md">
+                    <select id="filterCity" class="form-select">
+                        <option value="">所有城市</option>
+                    </select>
+                </div>
+                <!-- 区域筛选 -->
+                <div class="col-md">
+                    <select id="filterDistrict" class="form-select">
+                        <option value="">所有区域</option>
+                    </select>
+                </div>
+                <!-- 年级筛选 -->
+                <div class="col-md">
+                    <select id="filterGrade" class="form-select">
+                        <option value="">所有年级</option>
+                    </select>
+                </div>
+                <!-- 科目筛选 -->
+                <div class="col-md">
+                    <select id="filterSubject" class="form-select">
+                        <option value="">所有科目</option>
+                    </select>
+                </div>
+                <!-- 时间筛选 -->
+                <div class="col-md">
+                    <select id="filterDate" class="form-select">
+                        <option value="">所有时间</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 添加搜索结果总数显示 -->
+        <div class="d-flex justify-content-end mb-3">
+            <span class="text-muted">搜索结果：共 <span id="searchResultCount">0</span> 条家教</span>
+        </div>
+
+        <!-- 批量操作栏 -->
+        <div class="batch-actions" id="batchActions">
+            <div class="container">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div class="form-check me-3">
+                            <input class="form-check-input" type="checkbox" id="selectAll">
+                            <label class="form-check-label" for="selectAll">全选</label>
+                        </div>
+                        <div>已选择 <span id="selectedCount">0</span> 项 / 共 <span id="totalCount">0</span> 项</div>
+                    </div>
+                    <div>
+                        <button class="btn btn-outline-primary me-2" id="batchCopy">
+                            <i class="bi bi-clipboard"></i> 复制选中
+                        </button>
+                        <button class="btn btn-outline-success me-2" id="batchExport">
+                            <i class="bi bi-download"></i> 导出选中
+                        </button>
+                        <button class="btn btn-outline-danger" id="batchDelete">
+                            <i class="bi bi-trash"></i> 删除选中
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 结果表 -->
+        <div id="results">
+            <!-- 结果卡片将通过JavaScript态添加 -->
+        </div>
+    </div>
+
+    <!-- 新增模态框 -->
+    <div class="modal fade" id="addModal" tabindex="-1" inert>
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">新增家教</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">原始文本</label>
+                        <div class="input-area position-relative">
+                            <textarea class="form-control" id="textInput" rows="5" 
+                                placeholder="支持：&#13;&#10;1. 直接粘贴文本&#13;&#10;2. 拖入或粘贴 Word/TXT 文档"></textarea>
+                            <div class="drag-overlay" style="display: none;">
+                                <i class="bi bi-cloud-upload"></i>
+                                <span>释放鼠标以上传文件</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <button class="btn btn-primary" id="parseBtn">录入家教</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑模态框 -->
+    <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">编辑信息</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editRawContent" class="form-label">原始��容</label>
+                        <textarea class="form-control" id="editRawContent" rows="5"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editCity" class="form-label">城市</label>
+                                <input type="text" class="form-control" id="editCity">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editDistrict" class="form-label">区域</label>
+                                <input type="text" class="form-control" id="editDistrict">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editGradeLevel" class="form-label">年级</label>
+                        <select class="form-select" id="editGradeLevel">
+                            <option value="">选择年级</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">科目</label>
+                        <div id="editSubjects" class="d-flex flex-wrap gap-2">
+                            <!-- 科目选项将通过JavaScript动态添加 -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 确认模态框 -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmModalLabel">提示</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    已复制记录到剪贴板
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.0/mammoth.browser.min.js"></script>
+    <script type="module" src="cityData.js"></script>
+    <script type="module" src="script.js"></script>
+</body>
+</html>

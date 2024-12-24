@@ -1,0 +1,49 @@
+{
+  // 项目名称
+  "name": "tutoring-management",
+  // 项目版本号
+  "version": "1.0.0",
+  // 项目描述
+  "description": "家教信息管理系统",
+  // 入口文件
+  "main": "main.js",
+  // 可执行的脚本命令
+  "scripts": {
+    // 启动 Electron 应用
+    "start": "electron .",
+    // 构建可执行文件
+    "build": "electron-builder"
+  },
+  // 开发依赖包
+  "devDependencies": {
+    // Electron 框架
+    "electron": "^22.3.27",
+    // Electron 打包工具
+    "electron-builder": "^24.0.0"
+  },
+  // electron-builder 构建配置
+  "build": {
+    // 应用程序 ID
+    "appId": "com.tutoring.management",
+    // Windows 平台构建配置
+    "win": {
+      // 生成便携版程序
+      "target": "portable"
+    },
+    // 打包时包含的文件
+    "files": [
+      "**/*",
+      // 排除数据目录
+      "!data/*",
+      // 排除备份目录
+      "!backups/*"
+    ]
+  },
+  // 运行依赖包
+  "dependencies": {
+    // 跨域资源共享中间件
+    "cors": "^2.8.5",
+    // Express Web 框架
+    "express": "^4.21.2"
+  }
+}
