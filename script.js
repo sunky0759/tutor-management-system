@@ -26,7 +26,7 @@ const GRADE_PATTERNS_NEW = {
         pattern: /幼儿园|幼小|学前班/ 
     },
     '成人': {
-        // 匹配成人教育相关描��
+        // 匹配成人教育相关描述
         pattern: /成人|在职|上班族|大学生/ 
     }
 };
@@ -68,7 +68,7 @@ function loadData() {
             console.log('成功加载数据:', allResults.length, '条记录');
         }
     } catch (e) {
-        console.error('加载数据失��:', e);
+        console.error('加载数据失败:', e);
         allResults = [];
     }
 }
@@ -278,7 +278,7 @@ function applyFilters() {
     const dateStart = $('#dateStart').val();
     const dateEnd = $('#dateEnd').val();
 
-    // 从所有开始筛选
+    // 从所有开始��选
     filteredResults = [...allResults];
 
     // 应用搜索文本筛选
@@ -457,18 +457,24 @@ function extractCityAndDistrict(text) {
     let foundDistrict = null;
 
     // 特殊处理顺德区
-    console.log('检查是否包含顺德关键词...');
-    const hasShunde = text.includes('顺德') || text.includes('順德');
+    // 使用更严格的正则表达式来匹配顺德
+    const shundePattern = /[佛順顺][山德]/;
+    const hasShunde = shundePattern.test(text.replace(/\s+/g, ''));
     console.log('是否包含顺德:', hasShunde);
     
     if (hasShunde) {
-        console.log('找到顺德关键词，直接返回佛山市顺德区');
-        foundCity = '佛山';
-        foundDistrict = '顺德区';
-        return {
-            city: foundCity,
-            district: foundDistrict
-        };
+        // 进一步确认是否真的是顺德
+        const strictShundePattern = /[順顺]德/;
+        const isStrictShunde = strictShundePattern.test(text);
+        console.log('是否严格匹配顺德:', isStrictShunde);
+        
+        if (isStrictShunde) {
+            console.log('找到顺德关键词，直接返回佛山市顺德区');
+            return {
+                city: '佛山',
+                district: '顺德区'
+            };
+        }
     }
 
     // 先尝试匹配区域
@@ -476,13 +482,17 @@ function extractCityAndDistrict(text) {
     for (const [city, districts] of Object.entries(cityData)) {
         console.log(`检查城市 ${city} 的所有区域...`);
         for (const district of districts) {
-            const districtWithoutSuffix = district.replace(/[区市县镇]$/, '');
+            // 去除所有空白字符后再比较
+            const normalizedText = text.replace(/\s+/g, '');
+            const normalizedDistrict = district.replace(/\s+/g, '');
+            const districtWithoutSuffix = normalizedDistrict.replace(/[区市县镇]$/, '');
+            
             console.log(`- 检查区域: ${district} (不带后缀: ${districtWithoutSuffix})`);
             
-            // 使用更灵活的匹配方式
+            // 使用更严格的匹配方式
             const districtPattern = new RegExp(districtWithoutSuffix + '[区市县镇]?', 'i');
-            const matchResult = text.match(districtPattern);
-            const includesResult = text.includes(district);
+            const matchResult = normalizedText.match(districtPattern);
+            const includesResult = normalizedText.includes(normalizedDistrict);
             
             console.log(`  - 正则匹配结果: ${matchResult ? '是' : '否'}`);
             console.log(`  - 直接包含结果: ${includesResult ? '是' : '否'}`);
@@ -501,12 +511,17 @@ function extractCityAndDistrict(text) {
     if (!foundCity) {
         console.log('未找到区域匹配，开始匹配城市...');
         for (const city of Object.keys(cityData)) {
-            const cityWithoutSuffix = city.replace(/[市]$/, '');
+            // 去除所有空白字符后再比较
+            const normalizedText = text.replace(/\s+/g, '');
+            const normalizedCity = city.replace(/\s+/g, '');
+            const cityWithoutSuffix = normalizedCity.replace(/[市]$/, '');
+            
             console.log(`检查城市: ${city} (不带后缀: ${cityWithoutSuffix})`);
             
+            // 使用更严格的匹配方式
             const cityPattern = new RegExp(cityWithoutSuffix + '市?', 'i');
-            const matchResult = text.match(cityPattern);
-            const includesResult = text.includes(city);
+            const matchResult = normalizedText.match(cityPattern);
+            const includesResult = normalizedText.includes(normalizedCity);
             
             console.log(`- 正则匹配结果: ${matchResult ? '是' : '否'}`);
             console.log(`- 直接包含结果: ${includesResult ? '是' : '否'}`);
@@ -518,12 +533,14 @@ function extractCityAndDistrict(text) {
                 // 找到城市后，再次尝试匹配该城市的区域
                 console.log(`尝试匹配 ${city} 的区域...`);
                 for (const district of cityData[city]) {
-                    const districtWithoutSuffix = district.replace(/[区市县镇]$/, '');
+                    const normalizedDistrict = district.replace(/\s+/g, '');
+                    const districtWithoutSuffix = normalizedDistrict.replace(/[区市县镇]$/, '');
+                    
                     console.log(`- 检查区域: ${district} (不带后缀: ${districtWithoutSuffix})`);
                     
                     const districtPattern = new RegExp(districtWithoutSuffix + '[区市县镇]?', 'i');
-                    const matchResult = text.match(districtPattern);
-                    const includesResult = text.includes(district);
+                    const matchResult = normalizedText.match(districtPattern);
+                    const includesResult = normalizedText.includes(normalizedDistrict);
                     
                     console.log(`  - 正则匹配结果: ${matchResult ? '是' : '否'}`);
                     console.log(`  - 直接包含结果: ${includesResult ? '是' : '否'}`);
@@ -646,7 +663,7 @@ function saveEdit() {
     const result = allResults.find(r => r.id === id);
     
     if (!result) {
-        console.error('未找到要编辑的记录');
+        console.error('未找到要编辑的���录');
         return;
     }
 
@@ -741,7 +758,7 @@ $(document).ready(function() {
             // 保存数据
             saveDataToStorage();
             
-            // ��新显示
+            // 新显示
             displayResults(allResults);
             updateFilterOptions();
             updateTotalCount();
@@ -1111,7 +1128,7 @@ function initializeDistrictInput() {
 
 // 删除单条记录
 function deleteRecord(id) {
-    if (!confirm('确定要删除这条记录吗？')) {
+    if (!confirm('确定要���除这条记录吗？')) {
         return;
     }
 
@@ -1324,7 +1341,7 @@ function batchCopy() {
         const BATCH_SIZE = 8;
         const totalBatches = Math.ceil(selectedTexts.length / BATCH_SIZE);
         
-        if (confirm(`已选择 ${selectedTexts.length} 条记录，超过8条可能不便于阅读。\n点击"确定"进行分批复制（共 ${totalBatches} 批��每批8条），点击"取消"进行全复制。`)) {
+        if (confirm(`已选择 ${selectedTexts.length} 条记录，超过8条可能不便于阅读。\n点击"确定"进行分批复制（共 ${totalBatches} 批每批8条），点击"取消"进行全复制。`)) {
             // 分批复制
             for (let i = 0; i < selectedTexts.length; i += BATCH_SIZE) {
                 const currentBatch = Math.floor(i / BATCH_SIZE) + 1;

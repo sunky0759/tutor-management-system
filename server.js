@@ -1,106 +1,109 @@
-// 导入必要的 Node.js 模块
-// express: Web 应用框架
-// cors: 跨域资源共享中间件
-// fs: 文件系统操作
-// path: 路径处理工具
+const dotenv = require('dotenv');
+const path = require('path');
+
+// 加载环境变量
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
-const app = express();
+const cron = require('node-cron');
+const logger = require('./utils/logger');
+const edgeStore = require('./utils/edge-store');
 
-// 配置中间件
-// 启用 CORS 以允许跨域请求
-// 启用 JSON 解析以处理 JSON 格式的请求体
+// 检查环境变量
+if (!process.env.EDGE_CONFIG_ID || !process.env.EDGE_CONFIG_TOKEN) {
+    logger.error('Edge Config credentials not found in environment variables');
+    process.exit(1);
+}
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+// 中间件
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname)));
 
-// 配置静态文件服务，允许访问当前目录下的静态文件（如 HTML、CSS、JS）
-app.use(express.static(__dirname));
+// 错误处理中间件
+app.use((err, req, res, next) => {
+    logger.error('Error:', err);
+    res.status(500).json({ error: '服务器内部错误' });
+});
 
-// 定义数据存储相关的常量
-// DATA_FILE: JSON 数据文件的完整路径
-// DATA_DIR: 数据目录的路径
-const DATA_FILE = path.join(__dirname, 'data', 'tutoring_data.json');
-const DATA_DIR = path.join(__dirname, 'data');
-
-// 初始化数据存储
-// 检查并创建数据目录（如果不存在）
-if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR);
-}
-
-// 检查并创建数据文件（如果不存在）
-// 初始化为空数组的 JSON 文件
-if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify([]));
-}
-
-// API 路由：获取所有数据
-// GET /api/data
-app.get('/api/data', (req, res) => {
+// API 路由
+app.post('/api/tutoring', async (req, res) => {
     try {
-        // 读取数据文件并解析为 JSON
-        const data = fs.readFileSync(DATA_FILE, 'utf8');
-        res.json(JSON.parse(data));
+        const id = await edgeStore.saveTutoringInfo(req.body);
+        res.json({ id });
     } catch (error) {
-        console.error('读取数据失败:', error);
-        res.status(500).json({ error: '读取数据失败' });
+        logger.error('Error saving tutoring info:', error);
+        res.status(500).json({ error: '保存失败' });
     }
 });
 
-// API 路由：保存数据
-// POST /api/data
-app.post('/api/data', (req, res) => {
+app.get('/api/tutoring', async (req, res) => {
     try {
-        // 将请求体数据格式化为 JSON 字符串（使用 2 空格缩进）
-        const data = JSON.stringify(req.body, null, 2);
-        // 写入数据文件
-        fs.writeFileSync(DATA_FILE, data);
-        res.json({ message: '数据保存成功' });
+        const { city, district, grade, subject } = req.query;
+        const data = await edgeStore.queryTutoringInfo({ city, district, grade, subject });
+        res.json(data);
     } catch (error) {
-        console.error('保存数据失败:', error);
-        res.status(500).json({ error: '保存数据失败' });
+        logger.error('Error querying tutoring info:', error);
+        res.status(500).json({ error: '查询失败' });
     }
 });
 
-// 数据自动备份功能
-function createBackup() {
+app.put('/api/tutoring/:id', async (req, res) => {
     try {
-        // 生成时间戳作为备份文件名的一部分
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const backupDir = path.join(DATA_DIR, 'backups');
-        
-        // 确保备份目录存在
-        if (!fs.existsSync(backupDir)) {
-            fs.mkdirSync(backupDir);
-        }
-        
-        // 读取当前数据并创建备份
-        const data = fs.readFileSync(DATA_FILE, 'utf8');
-        const backupFile = path.join(backupDir, `backup_${timestamp}.json`);
-        fs.writeFileSync(backupFile, data);
-        
-        // 管理备份文件数量
-        // 只保留最近的 10 个备份，删除最旧的备份
-        const backups = fs.readdirSync(backupDir);
-        if (backups.length > 10) {
-            const oldestBackup = backups.sort()[0];
-            fs.unlinkSync(path.join(backupDir, oldestBackup));
-        }
+        await edgeStore.updateTutoringInfo(req.params.id, req.body);
+        res.json({ success: true });
     } catch (error) {
-        console.error('创建备份失败:', error);
+        logger.error('Error updating tutoring info:', error);
+        res.status(500).json({ error: '更新失败' });
     }
-}
+});
 
-// 设置定时备份
-// 每 24 小时（一天）执行一次备份
-setInterval(createBackup, 24 * 60 * 60 * 1000);
+app.delete('/api/tutoring/:id', async (req, res) => {
+    try {
+        await edgeStore.deleteTutoringInfo(req.params.id);
+        res.json({ success: true });
+    } catch (error) {
+        logger.error('Error deleting tutoring info:', error);
+        res.status(500).json({ error: '删除失败' });
+    }
+});
+
+// 备份路由
+app.post('/api/backup', async (req, res) => {
+    try {
+        const backup = await edgeStore.backup();
+        res.json(backup);
+    } catch (error) {
+        logger.error('Error creating backup:', error);
+        res.status(500).json({ error: '备份失败' });
+    }
+});
+
+app.post('/api/restore/:timestamp', async (req, res) => {
+    try {
+        await edgeStore.restoreBackup(req.params.timestamp);
+        res.json({ success: true });
+    } catch (error) {
+        logger.error('Error restoring backup:', error);
+        res.status(500).json({ error: '恢复失败' });
+    }
+});
+
+// 定时备份任务
+cron.schedule('0 3 * * *', async () => {
+    try {
+        await edgeStore.backup();
+        logger.info('Automatic backup completed');
+    } catch (error) {
+        logger.error('Automatic backup failed:', error);
+    }
+});
 
 // 启动服务器
-// 监听 3000 端口
-const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`服务器运行在 http://localhost:${PORT}`);
-    console.log(`数据文件路径: ${DATA_FILE}`);
+app.listen(port, () => {
+    logger.info(`Server is running on port ${port}`);
 });
