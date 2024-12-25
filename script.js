@@ -50,14 +50,15 @@ function setupEventListeners() {
         dropZone.addEventListener('dragleave', handleDragLeave);
         dropZone.addEventListener('drop', handleDrop);
     }
-    document.getElementById('fileUpload')?.addEventListener('change', handleFileUpload);
 
-    // 其他按钮事件
-    document.getElementById('analyzeBtn')?.addEventListener('click', handleAnalyzeAndAdd);
-    document.getElementById('clearBtn')?.addEventListener('click', () => {
-        document.getElementById('inputText').value = '';
-    });
-    document.getElementById('addCsBtn')?.addEventListener('click', handleAddCustomerService);
+    // 文件输入相关
+    document.getElementById('fileInput')?.addEventListener('change', handleFileUpload);
+
+    // 录家教按钮
+    document.getElementById('parseBtn')?.addEventListener('click', handleAnalyzeAndAdd);
+    
+    // 导出按钮
+    document.getElementById('exportBtn')?.addEventListener('click', exportToExcel);
 }
 
 // UI更新函数
@@ -142,7 +143,7 @@ function handleFileUpload(e) {
 }
 
 async function handleFiles(files) {
-    const textArea = document.getElementById('inputText');
+    const textArea = document.getElementById('textInput');
     if (!textArea) return;
 
     let allContent = [];
@@ -265,7 +266,7 @@ function analyzeContent(content) {
 
 // 处理添加家教单
 function handleAnalyzeAndAdd() {
-    const inputText = document.getElementById('inputText')?.value;
+    const inputText = document.getElementById('textInput')?.value;
     if (!inputText?.trim()) {
         return;
     }
@@ -286,11 +287,15 @@ function handleAnalyzeAndAdd() {
         })
     ];
 
-    const inputElement = document.getElementById('inputText');
+    const inputElement = document.getElementById('textInput');
     if (inputElement) inputElement.value = '';
     
     saveToLocalStorage();
     updateUI();
+    
+    // 关闭添加模态框
+    const addModal = bootstrap.Modal.getInstance(document.getElementById('addModal'));
+    if (addModal) addModal.hide();
     
     // 显示成功提示
     const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));

@@ -4,8 +4,8 @@
   "description": "家教信息管理系统",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
+    "start": "node --inspect server.js",
+    "dev": "nodemon --inspect server.js",
     "backup": "node scripts/backup.js"
   },
   "dependencies": {
