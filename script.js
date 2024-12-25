@@ -1,4 +1,7 @@
-﻿// 全局变量声明
+// 导入城市数据
+import { cityData } from './cityData.js';
+
+// 全局变量声明
 // autoSaveTimeout: 用于自动保存的定时器
 // allResults: 存储所有的家教信息记录
 // filteredResults: 存储经过筛选后的家教信息记录
@@ -435,9 +438,6 @@ function updateGradeAndSubjectFilters(grades, subjects) {
         filterSubject.innerHTML += `<option value="${subject}">${subject}</option>`;
     });
 }
-
-// 导入城市数据
-import cityData from './cityData.js';
 
 // 提取城市区域信息
 function extractCityAndDistrict(text) {

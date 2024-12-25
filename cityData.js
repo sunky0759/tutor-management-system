@@ -15,7 +15,7 @@ class CityDataManager {
                 "北京": ["东城区", "西城区", "朝阳区", "丰台区", "石景山区", "海淀区", "门头沟区", "房山区", "通州区", "顺义区", "昌平区", "大兴区", "怀柔区", "平谷区", "密云区", "延庆区"],
                 "上海": ["黄浦区", "徐汇区", "长宁区", "静安区", "普陀区", "虹口区", "杨浦区", "闵行区", "宝山区", "嘉定区", "浦东新区", "金山区", "松江区", "青浦区", "奉贤区", "崇明区"],
                 "广州": ["荔湾区", "越秀区", "海珠区", "天河区", "白云区", "黄埔区", "番禺区", "花都区", "南沙区", "从化区", "增城区"],
-                "深圳": ["福田区", "罗湖区", "南山区", "宝安区", "龙岗区", "盐田区", "龙华区", "坪山区", "光明区"],
+                "深圳": ["福田区", "罗湖区", "南山区", "宝安区", "龙岗区", "龙华区", "坪山区", "光明区", "大鹏新区", "盐田区"],
                 "武汉": ["江岸区", "江汉区", "硚口区", "汉阳区", "武昌区", "青山区", "洪山区", "东西湖区", "汉南区", "蔡甸区", "江夏区", "黄陂区", "新洲区"],
                 "成都": ["锦江区", "青羊区", "金牛区", "武侯区", "成华区", "龙泉驿区", "青白江区", "新都区", "温江区", "双流区", "郫都区", "新津区", "金堂县", "大邑县", "蒲江县", "都江堰市", "彭州市", "邛崃市", "崇州市", "简阳市"],
                 "天津": ["和平区", "河东区", "河西区", "南开区", "河北区", "红桥区", "东丽区", "西青区", "津南区", "北辰区", "武清区", "宝坻区", "滨海新区", "宁河区", "静海区", "蓟州区"],
@@ -38,23 +38,19 @@ class CityDataManager {
         }
     }
 
-    getAllCities() {
+    getCities() {
         return Object.keys(this.cityData || {});
     }
 
-    getDistrictsByCity(city) {
+    getDistricts(city) {
         return this.cityData?.[city] || [];
     }
 
-    isCityValid(city) {
-        return this.cityData?.hasOwnProperty(city) || false;
-    }
-
-    isDistrictValid(city, district) {
-        return this.getDistrictsByCity(city).includes(district);
+    getAllData() {
+        return this.cityData;
     }
 }
 
-// 导出城市数据管理器实例
+// 创建并导出城市数据管理器实例
 const cityManager = new CityDataManager();
-export default cityManager;
+export const cityData = cityManager.getAllData();
