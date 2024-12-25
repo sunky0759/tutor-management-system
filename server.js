@@ -23,19 +23,21 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// 设置正确的 MIME 类型
+// 设置所有 JavaScript 文件的 MIME 类型
 app.use((req, res, next) => {
-    if (req.url.endsWith('.js')) {
-        res.type('application/javascript');
+    const ext = path.extname(req.url);
+    if (ext === '.js' || ext === '.mjs') {
+        res.type('application/javascript; charset=UTF-8');
     }
     next();
 });
 
-// 静态文件服务
+// 静态文件中间件配置
 app.use(express.static(path.join(__dirname), {
-    setHeaders: (res, path) => {
-        if (path.endsWith('.js')) {
-            res.setHeader('Content-Type', 'application/javascript');
+    setHeaders: (res, filePath) => {
+        const ext = path.extname(filePath);
+        if (ext === '.js' || ext === '.mjs') {
+            res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
         }
     }
 }));
