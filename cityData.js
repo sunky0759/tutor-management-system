@@ -1,4 +1,4 @@
-export const cities = [
+const cities = [
     {
         "name": "北京市",
         "districts": [
@@ -31,7 +31,7 @@ export const cities = [
     }
 ];
 
-export const provinces = [
+const provinces = [
     "北京市", "天津市", "河北省", "山西省", "内蒙古自治区", 
     "辽宁省", "吉林省", "黑龙江省", "上海市", "江苏省", 
     "浙江省", "安徽省", "福建省", "江西省", "山东省", 
@@ -40,3 +40,5 @@ export const provinces = [
     "西藏自治区", "陕西省", "甘肃省", "青海省", "宁夏回族自治区", 
     "新疆维吾尔自治区"
 ];
+
+export { cities, provinces };
