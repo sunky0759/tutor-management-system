@@ -9,6 +9,113 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+/* 过滤栏样式 */
+.filter-bar {
+    background: white;
+    padding: 15px;
+    margin-bottom: 0.5rem !important;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.filter-bar .form-select {
+    max-width: 200px;
+    margin-right: 10px;
+}
+
+/* 结果容器样式 */
+.results-container {
+    margin-top: 1rem;
+}
+
+/* 结果卡片样式 */
+.result-card {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.result-card.recommended {
+    border-left: 4px solid #ffc107;
+}
+
+/* 标签样式 */
+.tag {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    margin-right: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.tag-city { 
+    background-color: #007bff; 
+    color: white; 
+}
+
+.tag-district { 
+    background-color: #28a745; 
+    color: white; 
+}
+
+.tag-grade { 
+    background-color: #dc3545; 
+    color: white; 
+}
+
+.tag-subject { 
+    background-color: #6c757d; 
+    color: white; 
+}
+
+/* 客服项样式 */
+.customer-service-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.customer-service-item:last-child {
+    border-bottom: none;
+}
+
+/* 微信ID样式 */
+.wechat-id {
+    cursor: pointer;
+    color: #007bff;
+}
+
+.wechat-id:hover {
+    text-decoration: underline;
+}
+
+/* 管理控制样式 */
+.admin-controls {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* 拖放区域样式 */
+.drop-zone {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.drop-zone.drag-over {
+    background: #e9ecef;
+    border-color: #007bff;
+}
+
 /* 上传区域样式 */
 .upload-area {
     border: 2px dashed #ccc;
@@ -30,36 +137,6 @@ body {
     max-height: 700px;
     overflow-y: auto;
 }
-
-.result-card {
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 15px;
-    background-color: #fff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-}
-
-.result-card:hover {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    transform: translateY(-2px);
-}
-
-/* 标签样式 */
-.tag {
-    display: inline-block;
-    padding: 4px 8px;
-    margin: 2px;
-    border-radius: 4px;
-    font-size: 0.9em;
-}
-
-.tag-city { background-color: #007bff; color: white; }
-.tag-district { background-color: #28a745; color: white; }
-.tag-grade { background-color: #dc3545; color: white; }
-.tag-subject { background-color: #ffc107; color: black; }
-.tag-salary { background-color: #6c757d; color: white; }
 
 /* 位置输入样式 */
 .location-input {

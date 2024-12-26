@@ -13,27 +13,55 @@ let state = {
 };
 
 // 初始化
-document.addEventListener('DOMContentLoaded', () => {
-    loadFromLocalStorage();
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadData();
     setupEventListeners();
     updateUI();
 });
 
-// 本地存储操作
-function loadFromLocalStorage() {
-    const savedResults = localStorage.getItem('tutorResults');
-    const savedCustomerServices = localStorage.getItem('customerServices');
-    const savedRecommended = localStorage.getItem('recommendedItems');
+// 从服务器加载数据
+async function loadData() {
+    try {
+        const [results, services] = await Promise.all([
+            fetch('/api/tutorRequests').then(res => res.json()),
+            fetch('/api/customerService').then(res => res.json())
+        ]);
 
-    if (savedResults) state.results = JSON.parse(savedResults);
-    if (savedCustomerServices) state.customerServices = JSON.parse(savedCustomerServices);
-    if (savedRecommended) state.recommendedItems = new Set(JSON.parse(savedRecommended));
+        state.results = results || [];
+        state.customerServices = services || [];
+        state.recommendedItems = new Set(
+            results.filter(item => item.is_recommended).map(item => item.id)
+        );
+        
+        updateUI();
+    } catch (error) {
+        console.error('加载数据失败:', error);
+        alert('加载数据失败，请刷新页面重试');
+    }
 }
 
-function saveToLocalStorage() {
-    localStorage.setItem('tutorResults', JSON.stringify(state.results));
-    localStorage.setItem('customerServices', JSON.stringify(state.customerServices));
-    localStorage.setItem('recommendedItems', JSON.stringify([...state.recommendedItems]));
+// 保存数据到服务器
+async function saveData() {
+    try {
+        const results = state.results.map(item => ({
+            ...item,
+            is_recommended: state.recommendedItems.has(item.id)
+        }));
+
+        // 批量更新所有记录
+        await Promise.all(
+            results.map(item =>
+                fetch('/api/tutorRequests', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(item)
+                })
+            )
+        );
+    } catch (error) {
+        console.error('保存数据失败:', error);
+        alert('保存数据失败，请重试');
+    }
 }
 
 // 事件监听器设置
@@ -59,6 +87,21 @@ function setupEventListeners() {
     
     // 导出按钮
     document.getElementById('exportBtn')?.addEventListener('click', exportToExcel);
+    
+    // 导出按钮
+    document.getElementById('exportDataBtn')?.addEventListener('click', exportData);
+    
+    // 导出本地存储数据到文件按钮
+    document.getElementById('exportToFileBtn')?.addEventListener('click', exportLocalStorageToFile);
+    
+    // 导入按钮
+    const importDataInput = document.getElementById('importDataInput');
+    if (importDataInput) {
+        importDataInput.addEventListener('change', (e) => {
+            const file = e.target.files?.[0];
+            if (file) importData(file);
+        });
+    }
 }
 
 // UI更新函数
@@ -265,59 +308,90 @@ function analyzeContent(content) {
 }
 
 // 处理添加家教单
-function handleAnalyzeAndAdd() {
-    const inputText = document.getElementById('textInput')?.value;
-    if (!inputText?.trim()) {
+async function handleAnalyzeAndAdd() {
+    const content = document.getElementById('inputContent').value.trim();
+    if (!content) {
+        alert('请输入内容');
         return;
     }
 
-    const newEntries = inputText
-        .split(/\n\s*\n/)  // 按空行分割多个家教单
-        .filter(text => text.trim())  // 过滤空内容
-        .map(text => analyzeContent(text.trim()));  // 分析每个家教单
+    const result = analyzeContent(content);
+    if (!result) {
+        alert('内容格式不正确');
+        return;
+    }
 
-    state.results = [
-        ...state.results,
-        ...newEntries.map(entry => {
-            if (state.customerServices.length > 0) {
-                const csIndex = state.results.length % state.customerServices.length;
-                return { ...entry, customerService: state.customerServices[csIndex] };
-            }
-            return entry;
-        })
-    ];
+    try {
+        const response = await fetch('/api/tutorRequests', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(result)
+        });
 
-    const inputElement = document.getElementById('textInput');
-    if (inputElement) inputElement.value = '';
-    
-    saveToLocalStorage();
-    updateUI();
-    
-    // 关闭添加模态框
-    const addModal = bootstrap.Modal.getInstance(document.getElementById('addModal'));
-    if (addModal) addModal.hide();
-    
-    // 显示成功提示
-    const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
-    confirmModal.show();
+        if (!response.ok) throw new Error('添加失败');
+
+        const newItem = await response.json();
+        state.results.push(newItem);
+        updateUI();
+        document.getElementById('inputContent').value = '';
+    } catch (error) {
+        console.error('添加家教单失败:', error);
+        alert('添加失败，请重试');
+    }
 }
 
 // 更新客服列表
-function updateCustomerServiceList() {
-    const container = document.getElementById('customerServiceList');
-    if (!container) return;
-    
-    container.innerHTML = '';
-    
-    state.customerServices.forEach((cs, index) => {
-        const div = document.createElement('div');
-        div.className = 'flex items-center justify-between p-2 bg-gray-100 rounded';
-        div.innerHTML = `
-            <span>${cs.name} (${cs.wechatId})</span>
-            <button onclick="handleRemoveCustomerService(${index})" class="text-red-500 hover:text-red-700">删除</button>
-        `;
-        container.appendChild(div);
-    });
+async function updateCustomerServiceList() {
+    try {
+        const response = await fetch('/api/customerService');
+        const services = await response.json();
+        state.customerServices = services;
+        
+        const customerServiceList = document.getElementById('customerServiceList');
+        customerServiceList.innerHTML = services.map(cs => `
+            <div class="customer-service-item">
+                <span>${cs.name}</span>
+                <span class="wechat-id" onclick="handleCopyWechatId('${cs.wechat_id}')">${cs.wechat_id}</span>
+                ${state.isAdmin ? `<button onclick="deleteCustomerService('${cs.id}')">删除</button>` : ''}
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('更新客服列表失败:', error);
+    }
+}
+
+// 删除客服
+async function deleteCustomerService(id) {
+    if (!confirm('确定要删除这个客服吗？')) return;
+
+    try {
+        await fetch(`/api/customerService?id=${id}`, { method: 'DELETE' });
+        state.customerServices = state.customerServices.filter(cs => cs.id !== id);
+        updateCustomerServiceList();
+    } catch (error) {
+        console.error('删除客服失败:', error);
+        alert('删除失败，请重试');
+    }
+}
+
+// 添加客服
+async function addCustomerService(name, wechatId) {
+    try {
+        const response = await fetch('/api/customerService', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, wechat_id: wechatId })
+        });
+
+        if (!response.ok) throw new Error('添加失败');
+
+        const newService = await response.json();
+        state.customerServices.push(newService);
+        updateCustomerServiceList();
+    } catch (error) {
+        console.error('添加客服失败:', error);
+        alert('添加失败，请重试');
+    }
 }
 
 // 更新结果列表
@@ -337,7 +411,7 @@ function updateResultsList() {
     });
 
     filteredResults.forEach((result, index) => {
-        const isRecommended = state.recommendedItems.has(index);
+        const isRecommended = state.recommendedItems.has(result.id);
         const div = document.createElement('div');
         div.className = `result-card ${isRecommended ? 'recommended' : ''}`;
         
@@ -387,4 +461,87 @@ function exportToExcel() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "家教信息");
     XLSX.writeFile(wb, "家教信息.xlsx");
+}
+
+// 数据导出功能
+async function exportData() {
+    try {
+        const [results, services] = await Promise.all([
+            fetch('/api/tutorRequests').then(res => res.json()),
+            fetch('/api/customerService').then(res => res.json())
+        ]);
+
+        const data = {
+            customerServices: services,
+            results: results,
+            recommendedItems: Array.from(state.recommendedItems)
+        };
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `家教数据_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('导出数据失败:', error);
+        alert('导出失败，请重试');
+    }
+}
+
+// 导入数据
+async function importData(file) {
+    try {
+        const content = await file.text();
+        const data = JSON.parse(content);
+
+        // 导入客服数据
+        await Promise.all(
+            data.customerServices.map(cs =>
+                fetch('/api/customerService', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cs)
+                })
+            )
+        );
+
+        // 导入家教需求
+        await Promise.all(
+            data.results.map(item =>
+                fetch('/api/tutorRequests', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(item)
+                })
+            )
+        );
+
+        // 更新状态
+        state.recommendedItems = new Set(data.recommendedItems);
+        await loadData(); // 重新加载数据
+        alert('数据导入成功');
+    } catch (error) {
+        console.error('导入数据失败:', error);
+        alert('导入失败，请确保文件格式正确');
+    }
+}
+
+// 自动备份功能
+function setupAutoBackup() {
+    // 每天自动备份一次
+    const BACKUP_INTERVAL = 24 * 60 * 60 * 1000; // 24小时
+    
+    setInterval(() => {
+        const lastBackup = localStorage.getItem('lastBackupTime');
+        const now = new Date().getTime();
+        
+        if (!lastBackup || now - parseInt(lastBackup) >= BACKUP_INTERVAL) {
+            exportData();
+            localStorage.setItem('lastBackupTime', now.toString());
+        }
+    }, 60 * 60 * 1000); // 每小时检查一次
 }
