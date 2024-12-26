@@ -309,34 +309,60 @@ function analyzeContent(content) {
 
 // 处理添加家教单
 async function handleAnalyzeAndAdd() {
-    const content = document.getElementById('inputContent').value.trim();
+    const inputContent = document.getElementById('inputContent');
+    if (!inputContent) {
+        console.error('Input element not found');
+        return;
+    }
+
+    const content = inputContent.value.trim();
     if (!content) {
         alert('请输入内容');
         return;
     }
 
-    const result = analyzeContent(content);
-    if (!result) {
-        alert('内容格式不正确');
-        return;
-    }
-
     try {
+        const result = analyzeContent(content);
+        if (!result) {
+            alert('内容格式不正确');
+            return;
+        }
+
+        // 准备要保存的数据
+        const requestData = {
+            content: content,
+            subjects: result.subjects,
+            grade: result.gradeLevel,
+            location: result.city + (result.district ? ` ${result.district}` : ''),
+            status: 'pending'
+        };
+
+        // 发送到服务器
         const response = await fetch('/api/tutorRequests', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(result)
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify([requestData])
         });
 
-        if (!response.ok) throw new Error('添加失败');
+        if (!response.ok) {
+            throw new Error('保存失败');
+        }
 
-        const newItem = await response.json();
-        state.results.push(newItem);
-        updateUI();
-        document.getElementById('inputContent').value = '';
+        // 清空输入框
+        inputContent.value = '';
+        
+        // 重新加载数据
+        await loadData();
+        
+        // 更新UI
+        updateResultsList();
+        
+        alert('添加成功！');
     } catch (error) {
-        console.error('添加家教单失败:', error);
-        alert('添加失败，请重试');
+        console.error('Error in handleAnalyzeAndAdd:', error);
+        alert('添加失败：' + error.message);
     }
 }
 
@@ -490,6 +516,24 @@ async function exportData() {
         console.error('导出数据失败:', error);
         alert('导出失败，请重试');
     }
+}
+
+// 导出本地存储数据到文件
+function exportLocalStorageToFile() {
+    const data = {
+        tutorRequests: state.results,
+        customerServices: state.customerServices
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tutoring_data_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 // 导入数据
