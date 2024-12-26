@@ -1,3 +1,6 @@
+// 导入城市数据
+import { cities, provinces } from './cityData.js';
+
 // 状态管理
 let state = {
     isAdmin: false,
